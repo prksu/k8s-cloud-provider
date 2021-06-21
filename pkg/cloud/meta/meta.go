@@ -128,7 +128,7 @@ var AllServices = []*ServiceInfo{
 			"Update",
 			"SetSecurityPolicy",
 		},
-		options:     AggregatedList,
+		options: AggregatedList,
 	},
 	{
 		Object:      "BackendService",
@@ -141,7 +141,7 @@ var AllServices = []*ServiceInfo{
 			"Update",
 			"SetSecurityPolicy",
 		},
-		options:     AggregatedList,
+		options: AggregatedList,
 	},
 	{
 		Object:      "BackendService",
@@ -154,7 +154,7 @@ var AllServices = []*ServiceInfo{
 			"Update",
 			"SetSecurityPolicy",
 		},
-		options:     AggregatedList,
+		options: AggregatedList,
 	},
 	{
 		Object:      "BackendService",
@@ -633,7 +633,10 @@ var AllServices = []*ServiceInfo{
 		version:     VersionAlpha,
 		keyType:     Regional,
 		serviceType: reflect.TypeOf(&alpha.SubnetworksService{}),
-		options: ListUsable,
+		options:     ListUsable,
+		additionalMethods: []string{
+			"Patch",
+		},
 	},
 	{
 		Object:      "Subnetwork",
@@ -641,8 +644,11 @@ var AllServices = []*ServiceInfo{
 		Resource:    "subnetworks",
 		version:     VersionBeta,
 		keyType:     Regional,
-		serviceType: reflect.TypeOf(&alpha.SubnetworksService{}),
-		options: ListUsable,
+		serviceType: reflect.TypeOf(&beta.SubnetworksService{}),
+		options:     ListUsable,
+		additionalMethods: []string{
+			"Patch",
+		},
 	},
 	{
 		Object:      "Subnetwork",
@@ -650,8 +656,11 @@ var AllServices = []*ServiceInfo{
 		Resource:    "subnetworks",
 		version:     VersionGA,
 		keyType:     Regional,
-		serviceType: reflect.TypeOf(&alpha.SubnetworksService{}),
-		options: ListUsable,
+		serviceType: reflect.TypeOf(&ga.SubnetworksService{}),
+		options:     ListUsable,
+		additionalMethods: []string{
+			"Patch",
+		},
 	},
 	{
 		Object:      "TargetHttpProxy",

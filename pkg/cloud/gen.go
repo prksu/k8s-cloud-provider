@@ -23459,6 +23459,7 @@ type AlphaSubnetworks interface {
 	Insert(ctx context.Context, key *meta.Key, obj *alpha.Subnetwork) error
 	Delete(ctx context.Context, key *meta.Key) error
 	ListUsable(ctx context.Context, fl *filter.F) ([]*alpha.UsableSubnetwork, error)
+	Patch(context.Context, *meta.Key, *alpha.Subnetwork) error
 }
 
 // NewMockAlphaSubnetworks returns a new mock for Subnetworks.
@@ -23500,6 +23501,7 @@ type MockAlphaSubnetworks struct {
 	InsertHook     func(ctx context.Context, key *meta.Key, obj *alpha.Subnetwork, m *MockAlphaSubnetworks) (bool, error)
 	DeleteHook     func(ctx context.Context, key *meta.Key, m *MockAlphaSubnetworks) (bool, error)
 	ListUsableHook func(ctx context.Context, fl *filter.F, m *MockAlphaSubnetworks) (bool, []*alpha.UsableSubnetwork, error)
+	PatchHook      func(context.Context, *meta.Key, *alpha.Subnetwork, *MockAlphaSubnetworks) error
 
 	// X is extra state that can be used as part of the mock. Generated code
 	// will not use this field.
@@ -23682,6 +23684,14 @@ func (m *MockAlphaSubnetworks) ListUsable(ctx context.Context, fl *filter.F) ([]
 // Obj wraps the object for use in the mock.
 func (m *MockAlphaSubnetworks) Obj(o *alpha.Subnetwork) *MockSubnetworksObj {
 	return &MockSubnetworksObj{o}
+}
+
+// Patch is a mock for the corresponding method.
+func (m *MockAlphaSubnetworks) Patch(ctx context.Context, key *meta.Key, arg0 *alpha.Subnetwork) error {
+	if m.PatchHook != nil {
+		return m.PatchHook(ctx, key, arg0, m)
+	}
+	return nil
 }
 
 // GCEAlphaSubnetworks is a simplifying adapter for the GCE Subnetworks.
@@ -23867,6 +23877,39 @@ func (g *GCEAlphaSubnetworks) ListUsable(ctx context.Context, fl *filter.F) ([]*
 	return all, nil
 }
 
+// Patch is a method on GCEAlphaSubnetworks.
+func (g *GCEAlphaSubnetworks) Patch(ctx context.Context, key *meta.Key, arg0 *alpha.Subnetwork) error {
+	klog.V(5).Infof("GCEAlphaSubnetworks.Patch(%v, %v, ...): called", ctx, key)
+
+	if !key.Valid() {
+		klog.V(2).Infof("GCEAlphaSubnetworks.Patch(%v, %v, ...): key is invalid (%#v)", ctx, key, key)
+		return fmt.Errorf("invalid GCE key (%+v)", key)
+	}
+	projectID := g.s.ProjectRouter.ProjectID(ctx, "alpha", "Subnetworks")
+	rk := &RateLimitKey{
+		ProjectID: projectID,
+		Operation: "Patch",
+		Version:   meta.Version("alpha"),
+		Service:   "Subnetworks",
+	}
+	klog.V(5).Infof("GCEAlphaSubnetworks.Patch(%v, %v, ...): projectID = %v, rk = %+v", ctx, key, projectID, rk)
+
+	if err := g.s.RateLimiter.Accept(ctx, rk); err != nil {
+		klog.V(4).Infof("GCEAlphaSubnetworks.Patch(%v, %v, ...): RateLimiter error: %v", ctx, key, err)
+		return err
+	}
+	call := g.s.Alpha.Subnetworks.Patch(projectID, key.Region, key.Name, arg0)
+	call.Context(ctx)
+	op, err := call.Do()
+	if err != nil {
+		klog.V(4).Infof("GCEAlphaSubnetworks.Patch(%v, %v, ...) = %+v", ctx, key, err)
+		return err
+	}
+	err = g.s.WaitForCompletion(ctx, op)
+	klog.V(4).Infof("GCEAlphaSubnetworks.Patch(%v, %v, ...) = %+v", ctx, key, err)
+	return err
+}
+
 // BetaSubnetworks is an interface that allows for mocking of Subnetworks.
 type BetaSubnetworks interface {
 	Get(ctx context.Context, key *meta.Key) (*beta.Subnetwork, error)
@@ -23874,6 +23917,7 @@ type BetaSubnetworks interface {
 	Insert(ctx context.Context, key *meta.Key, obj *beta.Subnetwork) error
 	Delete(ctx context.Context, key *meta.Key) error
 	ListUsable(ctx context.Context, fl *filter.F) ([]*beta.UsableSubnetwork, error)
+	Patch(context.Context, *meta.Key, *beta.Subnetwork) error
 }
 
 // NewMockBetaSubnetworks returns a new mock for Subnetworks.
@@ -23915,6 +23959,7 @@ type MockBetaSubnetworks struct {
 	InsertHook     func(ctx context.Context, key *meta.Key, obj *beta.Subnetwork, m *MockBetaSubnetworks) (bool, error)
 	DeleteHook     func(ctx context.Context, key *meta.Key, m *MockBetaSubnetworks) (bool, error)
 	ListUsableHook func(ctx context.Context, fl *filter.F, m *MockBetaSubnetworks) (bool, []*beta.UsableSubnetwork, error)
+	PatchHook      func(context.Context, *meta.Key, *beta.Subnetwork, *MockBetaSubnetworks) error
 
 	// X is extra state that can be used as part of the mock. Generated code
 	// will not use this field.
@@ -24097,6 +24142,14 @@ func (m *MockBetaSubnetworks) ListUsable(ctx context.Context, fl *filter.F) ([]*
 // Obj wraps the object for use in the mock.
 func (m *MockBetaSubnetworks) Obj(o *beta.Subnetwork) *MockSubnetworksObj {
 	return &MockSubnetworksObj{o}
+}
+
+// Patch is a mock for the corresponding method.
+func (m *MockBetaSubnetworks) Patch(ctx context.Context, key *meta.Key, arg0 *beta.Subnetwork) error {
+	if m.PatchHook != nil {
+		return m.PatchHook(ctx, key, arg0, m)
+	}
+	return nil
 }
 
 // GCEBetaSubnetworks is a simplifying adapter for the GCE Subnetworks.
@@ -24282,6 +24335,39 @@ func (g *GCEBetaSubnetworks) ListUsable(ctx context.Context, fl *filter.F) ([]*b
 	return all, nil
 }
 
+// Patch is a method on GCEBetaSubnetworks.
+func (g *GCEBetaSubnetworks) Patch(ctx context.Context, key *meta.Key, arg0 *beta.Subnetwork) error {
+	klog.V(5).Infof("GCEBetaSubnetworks.Patch(%v, %v, ...): called", ctx, key)
+
+	if !key.Valid() {
+		klog.V(2).Infof("GCEBetaSubnetworks.Patch(%v, %v, ...): key is invalid (%#v)", ctx, key, key)
+		return fmt.Errorf("invalid GCE key (%+v)", key)
+	}
+	projectID := g.s.ProjectRouter.ProjectID(ctx, "beta", "Subnetworks")
+	rk := &RateLimitKey{
+		ProjectID: projectID,
+		Operation: "Patch",
+		Version:   meta.Version("beta"),
+		Service:   "Subnetworks",
+	}
+	klog.V(5).Infof("GCEBetaSubnetworks.Patch(%v, %v, ...): projectID = %v, rk = %+v", ctx, key, projectID, rk)
+
+	if err := g.s.RateLimiter.Accept(ctx, rk); err != nil {
+		klog.V(4).Infof("GCEBetaSubnetworks.Patch(%v, %v, ...): RateLimiter error: %v", ctx, key, err)
+		return err
+	}
+	call := g.s.Beta.Subnetworks.Patch(projectID, key.Region, key.Name, arg0)
+	call.Context(ctx)
+	op, err := call.Do()
+	if err != nil {
+		klog.V(4).Infof("GCEBetaSubnetworks.Patch(%v, %v, ...) = %+v", ctx, key, err)
+		return err
+	}
+	err = g.s.WaitForCompletion(ctx, op)
+	klog.V(4).Infof("GCEBetaSubnetworks.Patch(%v, %v, ...) = %+v", ctx, key, err)
+	return err
+}
+
 // Subnetworks is an interface that allows for mocking of Subnetworks.
 type Subnetworks interface {
 	Get(ctx context.Context, key *meta.Key) (*ga.Subnetwork, error)
@@ -24289,6 +24375,7 @@ type Subnetworks interface {
 	Insert(ctx context.Context, key *meta.Key, obj *ga.Subnetwork) error
 	Delete(ctx context.Context, key *meta.Key) error
 	ListUsable(ctx context.Context, fl *filter.F) ([]*ga.UsableSubnetwork, error)
+	Patch(context.Context, *meta.Key, *ga.Subnetwork) error
 }
 
 // NewMockSubnetworks returns a new mock for Subnetworks.
@@ -24330,6 +24417,7 @@ type MockSubnetworks struct {
 	InsertHook     func(ctx context.Context, key *meta.Key, obj *ga.Subnetwork, m *MockSubnetworks) (bool, error)
 	DeleteHook     func(ctx context.Context, key *meta.Key, m *MockSubnetworks) (bool, error)
 	ListUsableHook func(ctx context.Context, fl *filter.F, m *MockSubnetworks) (bool, []*ga.UsableSubnetwork, error)
+	PatchHook      func(context.Context, *meta.Key, *ga.Subnetwork, *MockSubnetworks) error
 
 	// X is extra state that can be used as part of the mock. Generated code
 	// will not use this field.
@@ -24514,6 +24602,14 @@ func (m *MockSubnetworks) Obj(o *ga.Subnetwork) *MockSubnetworksObj {
 	return &MockSubnetworksObj{o}
 }
 
+// Patch is a mock for the corresponding method.
+func (m *MockSubnetworks) Patch(ctx context.Context, key *meta.Key, arg0 *ga.Subnetwork) error {
+	if m.PatchHook != nil {
+		return m.PatchHook(ctx, key, arg0, m)
+	}
+	return nil
+}
+
 // GCESubnetworks is a simplifying adapter for the GCE Subnetworks.
 type GCESubnetworks struct {
 	s *Service
@@ -24695,6 +24791,39 @@ func (g *GCESubnetworks) ListUsable(ctx context.Context, fl *filter.F) ([]*ga.Us
 	}
 
 	return all, nil
+}
+
+// Patch is a method on GCESubnetworks.
+func (g *GCESubnetworks) Patch(ctx context.Context, key *meta.Key, arg0 *ga.Subnetwork) error {
+	klog.V(5).Infof("GCESubnetworks.Patch(%v, %v, ...): called", ctx, key)
+
+	if !key.Valid() {
+		klog.V(2).Infof("GCESubnetworks.Patch(%v, %v, ...): key is invalid (%#v)", ctx, key, key)
+		return fmt.Errorf("invalid GCE key (%+v)", key)
+	}
+	projectID := g.s.ProjectRouter.ProjectID(ctx, "ga", "Subnetworks")
+	rk := &RateLimitKey{
+		ProjectID: projectID,
+		Operation: "Patch",
+		Version:   meta.Version("ga"),
+		Service:   "Subnetworks",
+	}
+	klog.V(5).Infof("GCESubnetworks.Patch(%v, %v, ...): projectID = %v, rk = %+v", ctx, key, projectID, rk)
+
+	if err := g.s.RateLimiter.Accept(ctx, rk); err != nil {
+		klog.V(4).Infof("GCESubnetworks.Patch(%v, %v, ...): RateLimiter error: %v", ctx, key, err)
+		return err
+	}
+	call := g.s.GA.Subnetworks.Patch(projectID, key.Region, key.Name, arg0)
+	call.Context(ctx)
+	op, err := call.Do()
+	if err != nil {
+		klog.V(4).Infof("GCESubnetworks.Patch(%v, %v, ...) = %+v", ctx, key, err)
+		return err
+	}
+	err = g.s.WaitForCompletion(ctx, op)
+	klog.V(4).Infof("GCESubnetworks.Patch(%v, %v, ...) = %+v", ctx, key, err)
+	return err
 }
 
 // AlphaTargetHttpProxies is an interface that allows for mocking of TargetHttpProxies.
